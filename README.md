@@ -1,80 +1,82 @@
+[中文文档](README_CN.md)
+
 # Caddy WebUI
 
-一个轻量级的 Caddy Web 管理面板，专为小内存 VPS 设计（最低 64MB），提供直观的 Web 界面管理 Caddy 的网站、反向代理、SSL 证书等功能。
+A lightweight Caddy web management panel designed for low-memory VPS (minimum 64MB), providing an intuitive web interface to manage Caddy websites, reverse proxies, SSL certificates, and more.
 
-## 功能特性
+## Features
 
-- **仪表盘** — 实时显示系统状态（CPU、内存、磁盘）、Caddy 运行状态、站点数量、证书概览
-- **站点管理** — 新增、编辑、删除、启用/禁用站点，支持域名格式校验和唯一性检查
-- **反向代理配置** — 代理目标 URL、路径路由、负载均衡（多后端）、自定义请求头、WebSocket 支持
-- **SSL 证书管理** — 自动申请（Let's Encrypt ACME）和自定义上传两种模式，支持证书更新和模式切换
-- **Caddyfile 编辑器** — 在线编辑 Caddyfile，语法校验，自动备份回滚
-- **文件管理** — 上传静态文件到站点目录
-- **全局设置** — 修改 WebUI 端口、管理员密码、日志级别
-- **Caddy 服务控制** — 通过 Web 界面启动、停止、重启、重载 Caddy
-- **IPv6 支持** — 所有站点自动添加 `bind ::` 指令
-- **一键安装** — 支持 Debian 12+、Ubuntu 18.04+、CentOS 7、CentOS Stream 8+、AlmaLinux 8+、Rocky Linux 8+、RHEL 7+
+- **Dashboard** — Real-time system status (CPU, memory, disk), Caddy running status, site count, certificate overview
+- **Site Management** — Create, edit, delete, enable/disable sites with domain validation and uniqueness checks
+- **Reverse Proxy Configuration** — Proxy target URL, path routing, load balancing (multiple backends), custom headers, WebSocket support
+- **SSL Certificate Management** — Two modes: auto-provision (Let's Encrypt ACME) and custom upload, with certificate update and mode switching
+- **Caddyfile Editor** — Online editing with syntax validation and automatic backup/rollback
+- **File Management** — Upload static files to site directories
+- **Global Settings** — Modify WebUI port, admin password, log level
+- **Caddy Service Control** — Start, stop, restart, and reload Caddy via web interface
+- **IPv6 Support** — Automatically adds `bind ::` directive for all sites
+- **One-Click Install** — Supports Debian 12+, Ubuntu 18.04+, CentOS 7, CentOS Stream 8+, AlmaLinux 8+, Rocky Linux 8+, RHEL 7+
 
-## 技术栈
+## Tech Stack
 
-| 组件 | 技术 |
-|------|------|
-| 后端 | Go 1.21+，原生 `net/http` 标准库 |
-| 数据库 | SQLite3（嵌入式，CGO） |
-| 前端 | 原生 HTML5 + CSS3 + JavaScript（无框架） |
-| Caddy | v2，通过 Caddyfile + Admin API 管理 |
-| 认证 | JWT (HS256) + bcrypt |
-| 安装 | Shell 脚本，兼容主流 Linux 发行版 |
+| Component | Technology |
+|-----------|-----------|
+| Backend | Go 1.21+, native `net/http` standard library |
+| Database | SQLite3 (embedded, CGO) |
+| Frontend | Native HTML5 + CSS3 + JavaScript (no framework) |
+| Caddy | v2, managed via Caddyfile + Admin API |
+| Auth | JWT (HS256) + bcrypt |
+| Install | Shell script, compatible with major Linux distros |
 
-## 项目结构
+## Project Structure
 
 ```
 caddy-webui/
-├── main.go                          # 程序入口，路由注册
+├── main.go                          # Entry point, route registration
 ├── internal/
-│   ├── config/                      # 配置加载与日志
-│   ├── database/                    # SQLite3 数据库操作
-│   ├── models/                      # 数据模型
-│   ├── handlers/                    # HTTP 请求处理器
-│   ├── middleware/                   # 中间件（认证、日志、恢复等）
-│   ├── auth/                        # JWT + bcrypt + 账号锁定
-│   ├── caddy/                       # Caddyfile 生成与服务控制
-│   └── system/                      # 系统状态监控
-├── static/                          # 前端静态文件（Go embed 嵌入）
+│   ├── config/                      # Config loading & logging
+│   ├── database/                    # SQLite3 database operations
+│   ├── models/                      # Data models
+│   ├── handlers/                    # HTTP request handlers
+│   ├── middleware/                   # Middleware (auth, logging, recovery, etc.)
+│   ├── auth/                        # JWT + bcrypt + account lockout
+│   ├── caddy/                       # Caddyfile generation & service control
+│   └── system/                      # System status monitoring
+├── static/                          # Frontend static files (embedded via Go embed)
 │   ├── css/
 │   ├── js/
 │   └── index.html
 ├── scripts/
-│   └── install.sh                   # 一键安装脚本
+│   └── install.sh                   # One-click install script
 ├── config/
-│   └── config.toml                  # 默认配置模板
+│   └── config.toml                  # Default config template
 ├── Makefile
 ├── LICENSE
 └── README.md
 ```
 
-## 快速开始
+## Quick Start
 
-### 一键安装（推荐）
+### One-Click Install (Recommended)
 
-在目标服务器上执行：
+Run on your target server:
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/caddy-webui/caddy-webui/main/scripts/install.sh)
 ```
 
-或手动下载脚本：
+Or download the script manually:
 
 ```bash
 wget https://raw.githubusercontent.com/caddy-webui/caddy-webui/main/scripts/install.sh
 bash install.sh
 ```
 
-安装完成后访问 `http://<服务器IP>:8729` 设置管理员账号。
+After installation, visit `http://<SERVER_IP>:8729` to set up the admin account.
 
-### 从源码编译
+### Build from Source
 
-**前置条件**：Go 1.21+、GCC（CGO 编译需要）
+**Prerequisites**: Go 1.21+, GCC (required for CGO)
 
 ```bash
 git clone https://github.com/caddy-webui/caddy-webui.git
@@ -83,17 +85,17 @@ go mod tidy
 CGO_ENABLED=1 go build -ldflags="-s -w" -o bin/caddy-webui .
 ```
 
-### 手动部署
+### Manual Deployment
 
 ```bash
-# 创建目录
+# Create directories
 mkdir -p /opt/caddy-webui/{bin,config,data,sites,ssl,www,log}
 
-# 复制二进制和配置
+# Copy binary and config
 cp bin/caddy-webui /opt/caddy-webui/bin/
 cp config/config.toml /opt/caddy-webui/config/
 
-# 注册 systemd 服务
+# Register systemd service
 cat > /etc/systemd/system/caddy-webui.service << 'EOF'
 [Unit]
 Description=Caddy WebUI Management Panel
@@ -115,17 +117,17 @@ systemctl daemon-reload
 systemctl enable --now caddy-webui
 ```
 
-## 配置说明
+## Configuration
 
-配置文件路径：`/opt/caddy-webui/config/config.toml`
+Config file path: `/opt/caddy-webui/config/config.toml`
 
 ```toml
 [server]
-port = 8729          # WebUI 监听端口
-host = "0.0.0.0"     # 监听地址（默认仅本地访问）
+port = 8729          # WebUI listening port
+host = "0.0.0.0"     # Listen address (default: localhost only)
 
 [log]
-level = "INFO"       # 日志级别: DEBUG/INFO/WARN/ERROR
+level = "INFO"       # Log level: DEBUG/INFO/WARN/ERROR
 dir = "/opt/caddy-webui/log/"
 
 [caddy]
@@ -135,51 +137,51 @@ service_name = "caddy"
 admin_api = "http://localhost:2019"
 ```
 
-## API 接口
+## API Reference
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | /api/auth/setup | 系统初始化 |
-| POST | /api/auth/login | 管理员登录 |
-| PUT | /api/auth/password | 修改密码 |
-| GET | /api/auth/status | 检查初始化状态 |
-| GET | /api/dashboard | 仪表盘数据 |
-| GET | /api/sites | 站点列表 |
-| POST | /api/sites | 新增站点 |
-| GET/PUT/DELETE | /api/sites/:id | 站点详情/更新/删除 |
-| PUT | /api/sites/:id/toggle | 启用/禁用站点 |
-| GET/POST | /api/caddy/status\|start\|stop\|restart\|reload | Caddy 服务控制 |
-| GET | /api/certificates | 证书列表 |
-| POST | /api/certificates/:id/renew | 续期证书 |
-| POST | /api/certificates/:id/upload | 上传自定义证书 |
-| PUT | /api/certificates/:id/update | 更新证书文件 |
-| PUT | /api/certificates/:id/mode | 切换证书模式 |
-| GET/PUT | /api/settings | 全局设置 |
-| GET/PUT | /api/files/caddyfile | Caddyfile 编辑 |
-| POST | /api/files/upload | 上传静态文件 |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /api/auth/setup | System initialization |
+| POST | /api/auth/login | Admin login |
+| PUT | /api/auth/password | Change password |
+| GET | /api/auth/status | Check initialization status |
+| GET | /api/dashboard | Dashboard data |
+| GET | /api/sites | List sites |
+| POST | /api/sites | Create site |
+| GET/PUT/DELETE | /api/sites/:id | Get/update/delete site |
+| PUT | /api/sites/:id/toggle | Enable/disable site |
+| GET/POST | /api/caddy/status\|start\|stop\|restart\|reload | Caddy service control |
+| GET | /api/certificates | List certificates |
+| POST | /api/certificates/:id/renew | Renew certificate |
+| POST | /api/certificates/:id/upload | Upload custom certificate |
+| PUT | /api/certificates/:id/update | Update certificate files |
+| PUT | /api/certificates/:id/mode | Switch certificate mode |
+| GET/PUT | /api/settings | Global settings |
+| GET/PUT | /api/files/caddyfile | Caddyfile editor |
+| POST | /api/files/upload | Upload static files |
 
-## 性能指标
+## Performance Targets
 
-| 指标 | 目标值 |
-|------|--------|
-| 面板运行内存 | < 30MB |
-| Caddy 运行内存 | < 20MB |
-| API 响应时间 | < 3s |
-| 配置变更生效时间 | < 5s |
+| Metric | Target |
+|--------|--------|
+| Panel memory usage | < 30MB |
+| Caddy memory usage | < 20MB |
+| API response time | < 3s |
+| Config change apply time | < 5s |
 
-## 安全特性
+## Security Features
 
-- 管理员密码 bcrypt 加密存储
-- JWT (HS256) 令牌认证，24 小时有效期
-- 连续 5 次登录失败锁定 15 分钟
-- Caddyfile 操作自动备份回滚
-- 自定义证书上传时校验 PEM 格式和公私钥匹配性
-- 文件上传禁止可执行文件
+- Admin password stored with bcrypt encryption
+- JWT (HS256) token authentication with 24-hour expiry
+- Account lockout after 5 consecutive failed login attempts (15 minutes)
+- Automatic backup and rollback for Caddyfile operations
+- PEM format and key-pair matching validation on custom certificate upload
+- Executable file upload restriction
 
-## 支持的操作系统
+## Supported Operating Systems
 
-| 操作系统 | 最低版本 |
-|----------|----------|
+| OS | Minimum Version |
+|----|----------------|
 | Debian | 12+ |
 | Ubuntu | 18.04+ |
 | CentOS | 7 |

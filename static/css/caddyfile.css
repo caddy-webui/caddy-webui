@@ -1,0 +1,18 @@
+.caddyfile-editor {
+    width: 100%;
+    min-height: 500px;
+    font-family: "Courier New", monospace;
+    font-size: 14px;
+    padding: 12px;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+.caddyfile-editor:focus {
+    outline: none;
+    border-color: #3498db;
+}

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caddy WebUI</title>
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/sites.css">
+    <link rel="stylesheet" href="/css/site-edit.css">
+    <link rel="stylesheet" href="/css/caddyfile.css">
+    <link rel="stylesheet" href="/css/files.css">
+    <link rel="stylesheet" href="/css/settings.css">
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle" id="menuToggle">&#9776;</button>
+                <h1 class="logo">Caddy WebUI</h1>
+            </div>
+            <div class="header-right">
+                <span id="headerUsername"></span>
+                <button class="btn btn-sm btn-danger" id="logoutBtn">退出</button>
+            </div>
+        </header>
+        <div class="layout">
+            <nav class="sidebar" id="sidebar">
+                <a href="#/dashboard" class="nav-item active" data-page="dashboard">仪表盘</a>
+                <a href="#/sites" class="nav-item" data-page="sites">站点管理</a>
+                <a href="#/caddyfile" class="nav-item" data-page="caddyfile">Caddyfile</a>
+                <a href="#/files" class="nav-item" data-page="files">文件管理</a>
+                <a href="#/settings" class="nav-item" data-page="settings">全局设置</a>
+            </nav>
+            <main class="main-content" id="mainContent">
+            </main>
+        </div>
+    </div>
+
+    <div id="loginPage" style="display:none;">
+        <div class="login-container">
+            <h2>Caddy WebUI</h2>
+            <div id="loginError" class="error-msg" style="display:none;"></div>
+            <input type="text" id="loginUsername" placeholder="用户名" autocomplete="username">
+            <input type="password" id="loginPassword" placeholder="密码" autocomplete="current-password">
+            <button class="btn btn-primary btn-block" id="loginSubmit">登录</button>
+        </div>
+    </div>
+
+    <div id="setupPage" style="display:none;">
+        <div class="login-container">
+            <h2>初始化管理员账号</h2>
+            <div id="setupError" class="error-msg" style="display:none;"></div>
+            <input type="text" id="setupUsername" placeholder="用户名（3-32位字母数字下划线）">
+            <input type="password" id="setupPassword" placeholder="密码（至少6位）">
+            <input type="password" id="setupPasswordConfirm" placeholder="确认密码">
+            <button class="btn btn-primary btn-block" id="setupSubmit">初始化</button>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/router.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>

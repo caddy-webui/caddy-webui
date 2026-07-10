@@ -1,0 +1,13 @@
+[server]
+port = 8729
+host = "127.0.0.1"
+
+[log]
+level = "INFO"
+dir = "/opt/caddy-webui/log/"
+
+[caddy]
+binary_path = "/usr/bin/caddy"
+config_path = "/opt/caddy-webui/config/Caddyfile"
+service_name = "caddy"
+admin_api = "http://localhost:2019"

@@ -1,0 +1,9 @@
+.settings-section {
+    margin-bottom: 24px;
+}
+
+.settings-section h3 {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #ecf0f1;
+}

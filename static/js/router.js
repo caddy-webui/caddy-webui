@@ -2,6 +2,7 @@ const router = {
     routes: {},
     currentRoute: null,
     dashboardTimer: null,
+    currentPage: null,
 
     register(path, handler) {
         this.routes[path] = handler;

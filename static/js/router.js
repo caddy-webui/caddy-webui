@@ -7,6 +7,7 @@ const router = {
     },
 
     navigate(hash) {
+        if (window.location.hash === hash) return;
         window.location.hash = hash;
     },
 
@@ -27,7 +28,9 @@ const router = {
         }
 
         if (!api.token) {
-            this.navigate('#/login');
+            if (path !== '/login' && path !== '/setup') {
+                this.navigate('#/login');
+            }
             return;
         }
 

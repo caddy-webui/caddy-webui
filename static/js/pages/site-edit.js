@@ -10,6 +10,7 @@
         const parts = hash.split('/');
         siteId = parts[parts.length - 2];
         const resp = await api.getSite(siteId);
+        if (router.currentPage !== 'site-edit') return;
         if (resp.code === 0) site = resp.data;
     }
 

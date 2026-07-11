@@ -102,14 +102,15 @@ func registerStaticRoutes(mux *http.ServeMux) {
 			path = "/index.html"
 		}
 
-		// 从 embed.FS 读取文件
-		data, err := fs.ReadFile(sub, path)
+		// fs.ReadFile 要求路径不带前导 /
+		fsPath := strings.TrimPrefix(path, "/")
+
+		data, err := fs.ReadFile(sub, fsPath)
 		if err != nil {
 			http.NotFound(w, r)
 			return
 		}
 
-		// 根据扩展名设置 Content-Type
 		w.Header().Set("Content-Type", mimeByExt(path))
 		w.Write(data)
 	})

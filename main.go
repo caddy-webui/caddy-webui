@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"path/filepath"
 	"strings"
 
 	"github.com/caddy-webui/caddy-webui/internal/auth"
@@ -94,13 +95,57 @@ func registerStaticRoutes(mux *http.ServeMux) {
 		config.Error("静态资源加载失败: %v", err)
 		return
 	}
-	fileServer := http.FileServer(http.FS(sub))
+
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" {
-			r.URL.Path = "/index.html"
+		path := r.URL.Path
+		if path == "/" {
+			path = "/index.html"
 		}
-		fileServer.ServeHTTP(w, r)
+
+		// 从 embed.FS 读取文件
+		data, err := fs.ReadFile(sub, path)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+
+		// 根据扩展名设置 Content-Type
+		w.Header().Set("Content-Type", mimeByExt(path))
+		w.Write(data)
 	})
+}
+
+func mimeByExt(path string) string {
+	switch filepath.Ext(path) {
+	case ".html":
+		return "text/html; charset=utf-8"
+	case ".css":
+		return "text/css; charset=utf-8"
+	case ".js":
+		return "application/javascript; charset=utf-8"
+	case ".json":
+		return "application/json; charset=utf-8"
+	case ".png":
+		return "image/png"
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".gif":
+		return "image/gif"
+	case ".svg":
+		return "image/svg+xml"
+	case ".ico":
+		return "image/x-icon"
+	case ".woff":
+		return "font/woff"
+	case ".woff2":
+		return "font/woff2"
+	case ".ttf":
+		return "font/ttf"
+	case ".eot":
+		return "application/vnd.ms-fontobject"
+	default:
+		return "application/octet-stream"
+	}
 }
 
 func handleSitesRouter(w http.ResponseWriter, r *http.Request) {

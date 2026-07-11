@@ -59,5 +59,5 @@
     }
 
     await loadDashboard();
-    dashboardTimer = setInterval(loadDashboard, 30000);
+    router.dashboardTimer = setInterval(loadDashboard, 30000);
 })();

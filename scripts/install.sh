@@ -173,17 +173,16 @@ deploy_binary() {
     # 安装编译依赖（CGO 需要 gcc 和 libc-dev）
     info "安装编译依赖..."
     if [ "$PKG_MANAGER" = "apt" ]; then
-        apt-get install -y golang-go build-essential
+        apt-get install -y golang-go build-essential git
     elif [ "$PKG_MANAGER" = "yum" ]; then
-        yum install -y golang gcc make
+        yum install -y golang gcc make git
     elif [ "$PKG_MANAGER" = "dnf" ]; then
-        dnf install -y golang gcc make
+        dnf install -y golang gcc make git
     fi
 
-    # 检查 Go 是否可用
+    # 检查 Go 是否可用，不可用则安装官方版本
     if ! command -v go &> /dev/null; then
-        # 系统包管理器的 Go 版本可能过低，尝试安装官方版本
-        info "系统 Go 版本不满足要求，安装官方 Go 环境..."
+        info "安装官方 Go 环境..."
         local GO_VERSION="1.21.13"
         local GO_ARCH="$(uname -m)"
         case "$GO_ARCH" in
@@ -205,16 +204,26 @@ deploy_binary() {
 
     info "Go 版本: $(go version)"
 
-    # 查找项目源码目录
+    # 查找项目源码目录：优先本地，否则从 GitHub 克隆
     local SOURCE_DIR=""
     if [ -f "$SCRIPT_DIR/../main.go" ] && [ -f "$SCRIPT_DIR/../go.mod" ]; then
         SOURCE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+        info "使用本地源码目录: $SOURCE_DIR"
     elif [ -f "$SCRIPT_DIR/../../main.go" ] && [ -f "$SCRIPT_DIR/../../go.mod" ]; then
         SOURCE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+        info "使用本地源码目录: $SOURCE_DIR"
     fi
 
     if [ -z "$SOURCE_DIR" ]; then
-        error "未找到项目源码目录（需要 main.go 和 go.mod），请将编译后的 caddy-webui 放到脚本同目录后重新运行"
+        info "本地未找到源码，从 GitHub 克隆..."
+        if ! command -v git &> /dev/null; then
+            error "未安装 git，无法克隆源码。请手动编译后将 caddy-webui 放到脚本同目录后重新运行"
+        fi
+
+        local CLONE_DIR="/tmp/caddy-webui-build"
+        rm -rf "$CLONE_DIR"
+        git clone --depth 1 https://github.com/caddy-webui/caddy-webui.git "$CLONE_DIR"
+        SOURCE_DIR="$CLONE_DIR"
     fi
 
     info "从源码编译: $SOURCE_DIR"
@@ -227,6 +236,10 @@ deploy_binary() {
     if [ -f /opt/caddy-webui/bin/caddy-webui ]; then
         chmod 755 /opt/caddy-webui/bin/caddy-webui
         info "编译成功"
+        # 清理克隆的临时源码
+        if [ "$SOURCE_DIR" = "/tmp/caddy-webui-build" ]; then
+            rm -rf "$SOURCE_DIR"
+        fi
     else
         error "编译失败，请检查错误信息或手动编译后重新运行"
     fi

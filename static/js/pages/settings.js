@@ -2,6 +2,7 @@
     const mc = document.getElementById('mainContent');
 
     const resp = await api.getSettings();
+    if (router.currentPage !== 'settings') return;
     const s = resp.code === 0 ? resp.data : {};
 
     mc.innerHTML = `

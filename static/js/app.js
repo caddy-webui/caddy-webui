@@ -94,13 +94,15 @@
             if (resp.code === 0) {
                 document.getElementById('headerUsername').textContent = resp.data.username || '';
                 if (!resp.data.initialized) {
-                    document.getElementById('app').style.display = 'none';
-                    document.getElementById('loginPage').style.display = 'none';
-                    document.getElementById('setupPage').style.display = 'block';
+                    router.navigate('#/setup');
                     return;
                 }
                 if (api.token) {
-                    router.navigate('#/dashboard');
+                    // 仅在当前不在已认证页面时才导航
+                    const currentPath = (window.location.hash || '#/login').substring(1);
+                    if (currentPath === '/login' || currentPath === '/setup') {
+                        router.navigate('#/dashboard');
+                    }
                 } else {
                     router.navigate('#/login');
                 }

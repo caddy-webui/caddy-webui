@@ -32,7 +32,9 @@ const api = {
 
         if (resp.status === 401) {
             this.clearToken();
-            window.location.hash = '#/login';
+            if (window.location.hash !== '#/login') {
+                window.location.hash = '#/login';
+            }
             throw new Error('认证已过期，请重新登录');
         }
 

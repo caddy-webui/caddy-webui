@@ -68,11 +68,16 @@
         }
     });
 
+    let _currentPage = null;
+
     function loadPage(name) {
         if (router.dashboardTimer) {
             clearInterval(router.dashboardTimer);
             router.dashboardTimer = null;
         }
+        // 标记当前页面，用于异步操作检查
+        _currentPage = name;
+        router.currentPage = name;
         const script = document.createElement('script');
         script.src = '/js/pages/' + name + '.js';
         script.onload = () => script.remove();

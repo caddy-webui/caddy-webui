@@ -2,6 +2,7 @@
     const mc = document.getElementById('mainContent');
 
     const resp = await api.getCaddyfile();
+    if (router.currentPage !== 'caddyfile') return;
     const content = resp.code === 0 ? (resp.data.content || '') : '';
 
     mc.innerHTML = `

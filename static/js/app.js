@@ -1,6 +1,5 @@
 (function() {
     const mainContent = document.getElementById('mainContent');
-    let dashboardTimer = null;
 
     document.getElementById('menuToggle').addEventListener('click', () => {
         document.getElementById('sidebar').classList.toggle('open');
@@ -70,9 +69,9 @@
     });
 
     function loadPage(name) {
-        if (dashboardTimer) {
-            clearInterval(dashboardTimer);
-            dashboardTimer = null;
+        if (router.dashboardTimer) {
+            clearInterval(router.dashboardTimer);
+            router.dashboardTimer = null;
         }
         const script = document.createElement('script');
         script.src = '/js/pages/' + name + '.js';

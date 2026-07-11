@@ -2,6 +2,7 @@
     const mc = document.getElementById('mainContent');
 
     const sitesResp = await api.getSites(1, 100);
+    if (router.currentPage !== 'files') return;
     const sites = sitesResp.code === 0 ? sitesResp.data.items : [];
 
     mc.innerHTML = `

@@ -3,9 +3,11 @@
     let page = 1;
 
     async function loadSites() {
+        if (router.currentPage !== 'sites') return;
         try {
             const resp = await api.getSites(page, 20);
             if (resp.code !== 0) return;
+            if (router.currentPage !== 'sites') return;
             const data = resp.data;
 
             let rows = '';

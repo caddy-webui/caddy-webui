@@ -153,17 +153,83 @@ deploy_binary() {
 
     SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+    # 优先使用脚本同目录下的预编译二进制文件
     if [ -f "$SCRIPT_DIR/caddy-webui" ]; then
         cp "$SCRIPT_DIR/caddy-webui" /opt/caddy-webui/bin/caddy-webui
-    elif [ -f "$(dirname "$0")/caddy-webui" ]; then
-        cp "$(dirname "$0")/caddy-webui" /opt/caddy-webui/bin/caddy-webui
-    else
-        warn "未找到本地二进制文件，请手动将编译后的 caddy-webui 复制到 /opt/caddy-webui/bin/"
-        warn "编译命令: CGO_ENABLED=1 go build -ldflags=\"-s -w\" -o /opt/caddy-webui/bin/caddy-webui ."
+        chmod 755 /opt/caddy-webui/bin/caddy-webui
+        info "已部署本地二进制文件"
         return
     fi
 
-    chmod 755 /opt/caddy-webui/bin/caddy-webui
+    # 检查是否已有编译好的二进制文件（如重复安装）
+    if [ -f /opt/caddy-webui/bin/caddy-webui ]; then
+        info "检测到已存在的二进制文件，跳过部署"
+        return
+    fi
+
+    # 尝试从源码自动编译
+    info "未找到本地二进制文件，尝试从源码编译..."
+
+    # 安装编译依赖（CGO 需要 gcc 和 libc-dev）
+    info "安装编译依赖..."
+    if [ "$PKG_MANAGER" = "apt" ]; then
+        apt-get install -y golang-go build-essential
+    elif [ "$PKG_MANAGER" = "yum" ]; then
+        yum install -y golang gcc make
+    elif [ "$PKG_MANAGER" = "dnf" ]; then
+        dnf install -y golang gcc make
+    fi
+
+    # 检查 Go 是否可用
+    if ! command -v go &> /dev/null; then
+        # 系统包管理器的 Go 版本可能过低，尝试安装官方版本
+        info "系统 Go 版本不满足要求，安装官方 Go 环境..."
+        local GO_VERSION="1.21.13"
+        local GO_ARCH="$(uname -m)"
+        case "$GO_ARCH" in
+            x86_64)  GO_ARCH="amd64" ;;
+            aarch64) GO_ARCH="arm64" ;;
+            *)       error "不支持的系统架构: $GO_ARCH" ;;
+        esac
+
+        wget -q "https://go.dev/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz" -O /tmp/go.tar.gz
+        rm -rf /usr/local/go
+        tar -C /usr/local -xzf /tmp/go.tar.gz
+        rm -f /tmp/go.tar.gz
+        export PATH="/usr/local/go/bin:$PATH"
+
+        if ! command -v go &> /dev/null; then
+            error "Go 环境安装失败，请手动安装 Go 1.21+ 后重新运行"
+        fi
+    fi
+
+    info "Go 版本: $(go version)"
+
+    # 查找项目源码目录
+    local SOURCE_DIR=""
+    if [ -f "$SCRIPT_DIR/../main.go" ] && [ -f "$SCRIPT_DIR/../go.mod" ]; then
+        SOURCE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+    elif [ -f "$SCRIPT_DIR/../../main.go" ] && [ -f "$SCRIPT_DIR/../../go.mod" ]; then
+        SOURCE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+    fi
+
+    if [ -z "$SOURCE_DIR" ]; then
+        error "未找到项目源码目录（需要 main.go 和 go.mod），请将编译后的 caddy-webui 放到脚本同目录后重新运行"
+    fi
+
+    info "从源码编译: $SOURCE_DIR"
+    cd "$SOURCE_DIR"
+
+    # 下载依赖并编译
+    go mod download
+    CGO_ENABLED=1 go build -ldflags="-s -w" -o /opt/caddy-webui/bin/caddy-webui .
+
+    if [ -f /opt/caddy-webui/bin/caddy-webui ]; then
+        chmod 755 /opt/caddy-webui/bin/caddy-webui
+        info "编译成功"
+    else
+        error "编译失败，请检查错误信息或手动编译后重新运行"
+    fi
 }
 
 deploy_config() {
@@ -219,7 +285,7 @@ EOF
 configure_firewall() {
     info "配置防火墙..."
 
-    if command -v ufw &> /dev/null && ufw status | grep -q "active"; then
+    if command -v ufw &> /dev/null && ufw status 2>/dev/null | grep -q "active"; then
         ufw allow 8729/tcp
         ufw allow 80/tcp
         ufw allow 443/tcp
@@ -230,8 +296,40 @@ configure_firewall() {
         firewall-cmd --permanent --add-port=443/tcp
         firewall-cmd --reload
         info "已通过 firewalld 开放端口 8729、80、443"
+    elif command -v nft &> /dev/null && systemctl is-active nftables &>/dev/null; then
+        # Debian 12 默认使用 nftables
+        local NFT_TABLE="caddy-webui"
+        if ! nft list table inet "$NFT_TABLE" &>/dev/null; then
+            nft add table inet "$NFT_TABLE"
+        fi
+        local NFT_CHAIN="${NFT_TABLE}_input"
+        if ! nft list chain inet "$NFT_TABLE" "$NFT_CHAIN" &>/dev/null; then
+            nft add chain inet "$NFT_TABLE" "$NFT_CHAIN" '{ type filter hook input priority 0 ; policy accept ; }'
+        fi
+        nft add rule inet "$NFT_TABLE" "$NFT_CHAIN" tcp dport { 80, 443, 8729 } accept
+        # 持久化规则
+        if [ -d /etc/nftables.d ]; then
+            nft list ruleset > /etc/nftables.d/caddy-webui.nft 2>/dev/null
+        elif [ -f /etc/nftables.conf ]; then
+            nft list ruleset > /etc/nftables.conf
+        fi
+        info "已通过 nftables 开放端口 8729、80、443"
+    elif command -v iptables &> /dev/null; then
+        # 回退到 iptables
+        iptables -A INPUT -p tcp --dport 8729 -j ACCEPT
+        iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+        iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+        # 持久化规则
+        if command -v iptables-save &> /dev/null; then
+            if [ -d /etc/iptables ]; then
+                iptables-save > /etc/iptables/rules.v4
+            elif command -v netfilter-persistent &> /dev/null; then
+                netfilter-persistent save
+            fi
+        fi
+        info "已通过 iptables 开放端口 8729、80、443"
     else
-        warn "未检测到活跃的防火墙，请手动开放端口 8729、80、443"
+        warn "未检测到防火墙工具（ufw/firewalld/nftables/iptables），请手动开放端口 8729、80、443"
     fi
 }
 
@@ -249,7 +347,24 @@ check_memory() {
 
 start_service() {
     info "启动 caddy-webui 服务..."
-    systemctl start caddy-webui || warn "服务启动失败，请检查日志: journalctl -u caddy-webui"
+    systemctl start caddy-webui
+
+    # 等待服务就绪（最多等待 10 秒）
+    local RETRY=0
+    local MAX_RETRY=10
+    while [ $RETRY -lt $MAX_RETRY ]; do
+        if systemctl is-active --quiet caddy-webui; then
+            break
+        fi
+        RETRY=$((RETRY + 1))
+        sleep 1
+    done
+
+    if systemctl is-active --quiet caddy-webui; then
+        info "caddy-webui 服务启动成功"
+    else
+        error "caddy-webui 服务启动失败，请检查日志: journalctl -u caddy-webui -n 50"
+    fi
 }
 
 show_result() {

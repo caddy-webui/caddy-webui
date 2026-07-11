@@ -2,9 +2,13 @@
     const mc = document.getElementById('mainContent');
 
     async function loadDashboard() {
+        // 如果已切换到其他页面，不再更新内容
+        if (router.currentPage !== 'dashboard') return;
         try {
             const resp = await api.getDashboard();
             if (resp.code !== 0) return;
+            // 再次检查，因为 API 调用是异步的
+            if (router.currentPage !== 'dashboard') return;
             const d = resp.data;
 
             mc.innerHTML = `
